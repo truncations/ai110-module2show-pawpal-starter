@@ -31,8 +31,9 @@ The classes I decided to include are the following with their responsibilities a
 **b. Design changes**
 
 - Did your design change during implementation?
+    Yes. My design changed during implementation.
 - If yes, describe at least one change and why you made it.
-
+    I moved the method create_plan() to another class. Instead of the class Pet, I moved up to the Owner because it logically justifies the realism of the scenario; an Owner creates a plan, not the pet itself. This also means that an owner can create multiple pets. Additionally, I replaced the data types of "datetime" to be "datetime.time" for some variables like work start time and work end time because it is unrealistic to hold datetime for a work start time and work end time since we don't need to know a particular day.
 ---
 
 ## 2. Scheduling Logic and Tradeoffs

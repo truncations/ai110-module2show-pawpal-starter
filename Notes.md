@@ -48,7 +48,7 @@ Main objects needed for system:
     Methods:
         * print_plan_cli() -> None | Prints plan in the command line interface as a readable form.
         * Getters and Setters
-- Pet Owner | Stores the pet owner's information.
+- Owner | Stores the pet owner's information.
     Attributes:
         * Name <str>
         * Age <int>

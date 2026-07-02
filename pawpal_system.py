@@ -7,7 +7,7 @@ with `raise NotImplementedError` and are yours to fill in.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, time
 
 
 @dataclass
@@ -32,9 +32,6 @@ class Task:
     def get_due_date(self, start_date: datetime) -> datetime:
         raise NotImplementedError
 
-    def get_days_left(self) -> float:
-        raise NotImplementedError
-
     # getters/setters
 
 
@@ -51,9 +48,6 @@ class Pet:
     def get_age(self) -> float:
         raise NotImplementedError
 
-    def create_plan(self) -> "Plan":
-        raise NotImplementedError
-
     # getters/setters
 
 
@@ -61,9 +55,13 @@ class Pet:
 class Owner:
     name: str
     age: int
-    work_starttime: datetime
-    work_endtime: datetime
-    pets: list[Pet] = field(default_factory=list)
+    work_starttime: time
+    work_endtime: time
+    pets: dict[str, Pet] = field(default_factory=dict)
+
+    def create_plan(self) -> "Plan":
+        """Build one plan for this owner, aggregating tasks across all pets."""
+        raise NotImplementedError
 
     # getters/setters
 
