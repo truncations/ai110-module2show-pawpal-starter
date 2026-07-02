@@ -9,7 +9,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, time, timedelta
 
-
 @dataclass
 class Constraints:
     frequency: int
@@ -19,8 +18,8 @@ class Constraints:
     start_time: time | None = None
     priority_level: int = 0
 
-    # checks if the current time right now is in range of our task's required time.
     def is_satisfiable(self) -> bool:
+        """Checks if the current time right now is in range of our task's required time."""
         current_time = datetime.now()
 
         for count in range(self.frequency):
@@ -32,8 +31,8 @@ class Constraints:
 
         return True
     
-    # get the max number of times a person can do the given task based on the cooldown, duration, and start time of task.
     def get_max_frequency(self) -> int:
+        """Get the max number of times a person can do the given task based on the cooldown, duration, and start time of task."""
         if self.duration <= 0:
             return 0
 
@@ -51,11 +50,9 @@ class Constraints:
         max_freq = (available_hours + self.cooldown) / (self.duration + self.cooldown)
         return max(0, int(max_freq))
 
-    # is the frequency number inputted (for user input) allowed?
     def frequency_is_allowed(self, new_freq: int) -> bool:
+        """Is the frequency number inputted (for user input) allowed?"""
         return new_freq > 0 and new_freq <= self.get_max_frequency()
-
-
 
 @dataclass
 class Task:
@@ -65,10 +62,12 @@ class Task:
     status: str = "Incomplete" # inputs either: Complete, In Progress, Incomplete
 
     def mark_complete(self):
+        """Marks this task's status as complete."""
         self.status = "Complete"
 
 @dataclass
 class Pet:
+    name: str
     species: str
     color: str
     birthdate: datetime
@@ -78,11 +77,13 @@ class Pet:
     allergies: list[str] = field(default_factory=list)
 
     def get_age(self) -> int:
+        """Calculates the pet's age in years from its birthdate."""
         current_datetime = datetime.now()
         age_of_pet_data = current_datetime - self.birthdate
         return age_of_pet_data // 365
     
     def create_task(self, name: str, description: str, constraints: Constraints) -> "Task":
+        """Creates a new task for this pet and adds it to its task list."""
         task = Task(name=name, description=description, constraints=constraints)
         self.tasks.append(task)
         return task
@@ -91,19 +92,20 @@ class Pet:
 class Owner:
     name: str
     age: int
-    work_starttime: time
-    work_endtime: time
+    work_starttime_hr: int
+    work_endtime_hr: int
     pets: dict[str, Pet] = field(default_factory=dict)
 
     def get_all_tasks(self) -> dict[str, list[Task]]:
+        """Returns a mapping of pet name to that pet's list of tasks."""
         return {pet_name : pet.tasks for pet_name, pet in self.pets.items()}
 
     def create_plan(self) -> "Scheduler":
         """Build one plan for this owner, aggregating tasks across all pets."""
         return Scheduler(owner=self)
 
-    # can the pet be created with the user's parameters even with barely any information?
     def can_create_pet(self, pet_name: str, species: str, color: str, year: int, month: int, day: int, height: float, weight: float):
+        """Can the pet be created with the user's parameters even with barely any information?"""
         if month == 12:
             next_month = datetime(year=year + 1, month=1, day=1)
         elif month >= 1 and month < 12:
@@ -113,39 +115,56 @@ class Owner:
         return pet_name != "" and (day >= 1 and day <= (next_month - datetime(year=year, month=month, day=1)).days)
 
     def create_pet(self, pet_name: str, species: str, color: str, year: int, month: int, day: int, height: float, weight: float) -> "Pet":
+        """Creates a new pet from the given parameters and adds it to this owner."""
         # creates birthdate here because a user can't input a birthdate object.
         birthdate = datetime(year=year, month=month, day=day)
-        new_pet = Pet(species=species, color=color, birthdate=birthdate, height=height, weight=weight)
-        self.pets[pet_name] = new_pet
+        new_pet = Pet(name=pet_name, species=species, color=color, birthdate=birthdate, height=height, weight=weight)
+        self.add_pet(new_pet)
         return new_pet
+    
+    def add_pet(self, pet: Pet) -> None:
+        """Adds the given pet to this owner's collection of pets."""
+        self.pets[pet.name] = pet
 
 
 @dataclass
 class Scheduler:
     owner: Owner
 
-    # organized by start time.
     def get_organized_tasks(self, task_list) -> list:
+        """Organized by start time."""
         tasks = task_list
         tasks.sort(key=lambda task: (task.constraints.start_time is None, task.constraints.start_time))
         return tasks
+    
+    def is_task_in_work_hours(self, task: Task) -> bool:
+        """Checks whether the task's start time falls within the owner's work hours."""
+        if task.constraints.start_time is None:
+            return False
+        return task.constraints.start_time.hour >= self.owner.work_starttime_hr and task.constraints.start_time.hour <= self.owner.work_endtime_hr
 
     def get_plan_str(self) -> str:
+        """Builds a formatted string of the owner's full schedule across all pets."""
         tasks = self.owner.get_all_tasks()
         str_to_return = "No tasks scheduled."
 
         if len(tasks) <= 0:
             return str_to_return
 
-        str_to_return = "Scheduled tasks for following pets:\n===============\n"
+        str_to_return = "\nToday's Schedule for following Pets:\nNOTE: [&] notation means the task scheduled is during your work hours.\n===============\n"
         for pet_name in tasks.keys():
-            str_to_return += f"{pet_name}"
+            str_to_return += f"{pet_name}\n"
             organized_task_list_for_pet = self.get_organized_tasks(tasks[pet_name])
             # should be Task object for all tasks.
             for task in organized_task_list_for_pet:
-                str_to_return += f"\t{task.constraints.start_time.strftime("%I:%M %p") if task.constraints.start_time else "<Unscheduled>"} | {task.status} | {task.name}"
+                if self.is_task_in_work_hours(task):
+                    str_to_return += "\t[&] "
+                else:
+                    str_to_return += "\t[*] "
+                str_to_return += f"{task.constraints.start_time.strftime("%I:%M %p") if task.constraints.start_time else "<Unscheduled>"} | {task.status} | {task.name}"
                 if len(task.constraints.prerequisites) > 0:
                     str_to_return += f"\n\t\t* Prerequisites: {", ".join(task.constraints.prerequisites)}"
-    
+                str_to_return += "\n"
+        str_to_return += "===============\n"
         return str_to_return
 

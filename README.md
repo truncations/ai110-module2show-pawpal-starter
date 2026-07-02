@@ -57,6 +57,19 @@ Paste a sample of your app's CLI or Streamlit output here so a reader can see wh
 #   ...
 ```
 
+Today's Schedule for following Pets:
+NOTE: [&] notation means the task scheduled is during your work hours.
+===============
+jack
+        [&] 07:00 AM | Incomplete | Walk
+        [&] 12:30 PM | Incomplete | Feed
+        [*] 06:00 PM | Incomplete | Grooming
+box
+        [&] 08:00 AM | Incomplete | Feed
+        [&] 02:15 PM | Incomplete | Walk
+        [*] 08:45 PM | Incomplete | Vet Checkup
+===============
+
 ## 🧪 Testing PawPal+
 
 ```bash
