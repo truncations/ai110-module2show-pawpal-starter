@@ -1,0 +1,55 @@
+classDiagram
+    class Pet {
+        -List~Task~ tasks
+        -str species
+        -str color
+        -datetime birthdate
+        -float height
+        -float weight
+        -List~str~ allergies
+        +get_age() float
+        +create_plan() Plan
+        +getters_setters()
+    }
+
+    class Owner {
+        -str name
+        -int age
+        -datetime work_starttime
+        -datetime work_endtime
+        -List~Pet~ pets
+        +getters_setters()
+    }
+
+    class Task {
+        -str task_name
+        -str task_description
+        -Constraint constraint
+        +get_due_date(start_date) datetime
+        +get_days_left() float
+        +getters_setters()
+    }
+
+    class Constraint {
+        -int frequency
+        -float cooldown
+        -float duration
+        -List~str~ prerequisites
+        -datetime time
+        -int priority_level
+        +getters_setters()
+    }
+
+    class Plan {
+        -Owner owner
+        -List~Task~ tasks
+        +print_plan_cli() None
+        +getters_setters()
+    }
+
+    Owner "1" --> "*" Pet : has
+    Pet "1" --> "*" Task : has
+    Task "1" --> "1" Constraint : has
+    Plan "1" --> "1" Owner : has
+    Plan "1" --> "*" Task : has
+    Pet ..> Plan : creates
