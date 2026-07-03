@@ -92,10 +92,10 @@ Sample test output:
 
 | Feature | Method(s) | Notes |
 |---------|-----------|-------|
-| Task sorting | | e.g., by priority, duration |
-| Filtering | | e.g., skip tasks if time runs out |
-| Conflict handling | | e.g., overlapping time slots |
-| Recurring tasks | | e.g., daily vs. weekly |
+| Task sorting | sort_tasks_by_time() | e.g., by priority, duration |
+| Filtering | filter_tasks(), (Pet objects contain tasks so filtering by pet automatically incorporated) | e.g., skip tasks if time runs out |
+| Conflict handling | check_task_for_conflicts(), has_scheduling_conflicts(), find_scheduling_conflicts() | e.g., overlapping time slots |
+| Recurring tasks | mark_task_complete () | e.g., daily vs. weekly |
 
 ## 📸 Demo Walkthrough
 

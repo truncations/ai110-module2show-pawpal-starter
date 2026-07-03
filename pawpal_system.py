@@ -6,30 +6,17 @@ with `raise NotImplementedError` and are yours to fill in.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, time, timedelta
 
 @dataclass
 class Constraints:
     frequency: int
-    cooldown: float
-    duration: float
+    cooldown: int
+    duration: int
     prerequisites: list[str] = field(default_factory=list)
     start_time: time | None = None
     priority_level: int = 0
-
-    def is_satisfiable(self) -> bool:
-        """Checks if the current time right now is in range of our task's required time."""
-        current_time = datetime.now()
-
-        for count in range(self.frequency):
-            temp_date = datetime(year=2000, month=1, day=1)
-            time_in_datetime = datetime.combine(date=temp_date, time=time) + timedelta(hours=self.cooldown*count)
-            end_time = time_in_datetime + timedelta(hours=self.duration)
-            if not (current_time.hour >= self.start_time.hour and current_time.hour <= end_time.hour):
-                return False
-
-        return True
     
     def get_max_frequency(self) -> int:
         """Get the max number of times a person can do the given task based on the cooldown, duration, and start time of task."""
@@ -47,7 +34,10 @@ class Constraints:
         if available_hours <= 0:
             return 0
 
-        max_freq = (available_hours + self.cooldown) / (self.duration + self.cooldown)
+        if (self.duration/60 + self.cooldown/60) > 0:
+            max_freq = (available_hours + self.cooldown/60) / (self.duration/60 + self.cooldown/60)
+        else:
+            max_freq = 0
         return max(0, int(max_freq))
 
     def frequency_is_allowed(self, new_freq: int) -> bool:
@@ -59,11 +49,21 @@ class Task:
     name: str
     description: str
     constraints: Constraints
-    status: str = "Incomplete" # inputs either: Complete, In Progress, Incomplete
-
+    status: str = "Incomplete"
+    due_date: datetime | None = None
+    recurrence: str | None = None # Daily, Weekly, None
+    
     def mark_complete(self):
         """Marks this task's status as complete."""
         self.status = "Complete"
+
+    def mark_in_progress(self):
+        """Marks this task's status as in progress."""
+        self.status = "In Progress"
+
+    def mark_incomplete(self):
+        """Marks this task's status as incomplete."""
+        self.status = "Incomplete"
 
 @dataclass
 class Pet:
@@ -80,18 +80,39 @@ class Pet:
         """Calculates the pet's age in years from its birthdate."""
         current_datetime = datetime.now()
         age_of_pet_data = current_datetime - self.birthdate
-        return age_of_pet_data // 365
+        return age_of_pet_data.days // 365
     
     def create_task(self, name: str, description: str, constraints: Constraints) -> "Task":
         """Creates a new task for this pet and adds it to its task list."""
         task = Task(name=name, description=description, constraints=constraints)
         self.tasks.append(task)
         return task
+    
+    def mark_task_complete(self, task: Task) -> None:
+        """Marks the given task complete and, if it recurs, schedules its next occurrence."""
+        task.mark_complete()
+
+        if task.recurrence == "Daily":
+            interval = timedelta(days=1)
+        elif task.recurrence == "Weekly":
+            interval = timedelta(days=7)
+        else:
+            return
+
+        base_date = task.due_date if task.due_date is not None else datetime.now()
+        next_task = Task(
+            name=task.name,
+            description=task.description,
+            constraints=replace(task.constraints),
+            due_date=base_date + interval,
+            recurrence=task.recurrence,
+        )
+        self.tasks.append(next_task)
+    
 
 @dataclass
 class Owner:
     name: str
-    age: int
     work_starttime_hr: int
     work_endtime_hr: int
     pets: dict[str, Pet] = field(default_factory=dict)
@@ -131,9 +152,9 @@ class Owner:
 class Scheduler:
     owner: Owner
 
-    def get_organized_tasks(self, task_list) -> list:
+    def sort_tasks_by_time(self, task_list) -> list:
         """Organized by start time."""
-        tasks = task_list
+        tasks = task_list[:]
         tasks.sort(key=lambda task: (task.constraints.start_time is None, task.constraints.start_time))
         return tasks
     
@@ -141,7 +162,70 @@ class Scheduler:
         """Checks whether the task's start time falls within the owner's work hours."""
         if task.constraints.start_time is None:
             return False
-        return task.constraints.start_time.hour >= self.owner.work_starttime_hr and task.constraints.start_time.hour <= self.owner.work_endtime_hr
+        work_start = time(hour=self.owner.work_starttime_hr)
+        work_end = time(hour=self.owner.work_endtime_hr)
+        return work_start <= task.constraints.start_time <= work_end
+
+    def filter_tasks(self, status: str | None = None) -> list[Task]:
+        """Filters tasks across all of the owner's pets by completion status."""
+        all_tasks = self.owner.get_all_tasks()
+
+        filtered = []
+        for tasks in all_tasks.values():
+            for task in tasks:
+                if status is not None and task.status != status:
+                    continue
+                filtered.append(task)
+        return filtered
+
+    def get_tasks_by_pet_name(self, pet_name: str) -> list[Task]:
+        """Returns the list of tasks belonging to the pet with the given name."""
+        all_tasks = self.owner.get_all_tasks()
+        return all_tasks.get(pet_name, [])
+
+    def _group_scheduled_tasks(self, include_completed: bool = False) -> dict[tuple, list[Task]]:
+        """Groups tasks, across all pets, by (due date, start time), skipping unscheduled tasks."""
+        groups: dict[tuple, list[Task]] = {}
+        for task in self.filter_tasks():
+            if task.constraints.start_time is None:
+                continue
+            if not include_completed and task.status == "Complete":
+                continue
+            key = (task.due_date.date() if task.due_date is not None else None, task.constraints.start_time)
+            groups.setdefault(key, []).append(task)
+        return groups
+
+    def find_scheduling_conflicts(self, include_completed: bool = False) -> list[list[Task]]:
+        """Finds groups of tasks, across all pets, that share the same due date and start time."""
+        groups = self._group_scheduled_tasks(include_completed=include_completed)
+        return [group for group in groups.values() if len(group) > 1]
+
+    def has_scheduling_conflicts(self, include_completed: bool = False) -> bool:
+        """Whether any two tasks, across all pets, are scheduled at the same time."""
+        return len(self.find_scheduling_conflicts(include_completed=include_completed)) > 0
+
+    def check_task_for_conflicts(self, task: Task, include_completed: bool = False) -> str | None:
+        """Lightweight check for whether a task about to be scheduled collides with an existing one.
+
+        Never raises: returns a warning message describing the conflict(s), or None if there
+        aren't any (including if the check itself couldn't be completed for some reason).
+        """
+        try:
+            if task.constraints.start_time is None:
+                return None
+
+            key = (task.due_date.date() if task.due_date is not None else None, task.constraints.start_time)
+            groups = self._group_scheduled_tasks(include_completed=include_completed)
+            conflicting = [existing for existing in groups.get(key, []) if existing is not task]
+
+            if not conflicting:
+                return None
+
+            time_str = task.constraints.start_time.strftime("%I:%M %p")
+            names = ", ".join(existing.name for existing in conflicting)
+            return f"Warning: '{task.name}' at {time_str} conflicts with existing task(s): {names}"
+        except Exception:
+            return f"Warning: could not verify scheduling conflicts for '{getattr(task, 'name', 'this task')}'."
 
     def get_plan_str(self) -> str:
         """Builds a formatted string of the owner's full schedule across all pets."""
@@ -154,7 +238,7 @@ class Scheduler:
         str_to_return = "\nToday's Schedule for following Pets:\nNOTE: [&] notation means the task scheduled is during your work hours.\n===============\n"
         for pet_name in tasks.keys():
             str_to_return += f"{pet_name}\n"
-            organized_task_list_for_pet = self.get_organized_tasks(tasks[pet_name])
+            organized_task_list_for_pet = self.sort_tasks_by_time(tasks[pet_name])
             # should be Task object for all tasks.
             for task in organized_task_list_for_pet:
                 if self.is_task_in_work_hours(task):

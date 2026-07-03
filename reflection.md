@@ -41,13 +41,15 @@ The classes I decided to include are the following with their responsibilities a
 **a. Constraints and priorities**
 
 - What constraints does your scheduler consider (for example: time, priority, preferences)?
+    My constraints that my scheduler considers are the following properties: Priority, Time, Prerequisites, Frequency of task, and Duration.
 - How did you decide which constraints mattered most?
-
+    I decided on which constraints mattered most by determining the impact of the person's lifestyle if I included the constraint in a realistic manner. I also wanted to create constraints to make sure that the person couldn't commit to an action that was either excessive or impossible to do. Once I understood these questions, I came up with a few simple constraints to help answer both of these questions which was Priority; to tell the person which tasks are most important, Time; what time to start the task, Prerequisites; Any actions that must be done BEFORE handling the task, Frequency of Task; how often the task should be done, and Duration; how long the task is being done for.
 **b. Tradeoffs**
 
 - Describe one tradeoff your scheduler makes.
+    One tradeoff that my scheduler makes mainly is for memory complexity; I prioritize readability for code over the efficiency of the program which can end up doing unnecessary steps. For the most important example, this can be well shown in _group_scheduled_tasks(), find_scheduling_conflicts() and check_task_for_conflicts(). Although this method _group_scheduled_tasks() was reformatted to help follow D.R.Y (don't repeat yourself), it added extra steps to the program than I initially thought with AI's assistance on analysis when analyzing check_task_for_conflicts() where through each requested scheduled task, the program would build a group of dictionaries only to pick up one single set from the dictionary every single query.
 - Why is that tradeoff reasonable for this scenario?
-
+    Because the amount of tasks that would be created for a single pet would be pretty small, and realistically, the number of tasks for a pet at max would be around 10-15, and the number of pets would be at max 3. If we do the mathematics, that's a list/dictionary of size 45 which is nowhere near enough of a huge dataset that the performance makes a difference. But this also means that we can use _group_scheduled_tasks() as a method for future methods if we choose to implement other sorting/filtering methods (thanks to its flexibility, as shown with its use in check_task_for_conflicts() and find_scheduling_conflicts()).
 ---
 
 ## 3. AI Collaboration
