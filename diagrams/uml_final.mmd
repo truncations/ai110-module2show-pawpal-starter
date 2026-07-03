@@ -1,0 +1,67 @@
+classDiagram
+    class Pet {
+        -List~Task~ tasks
+        -str species
+        -str color
+        -datetime birthdate
+        -float height
+        -float weight
+        +get_age() float
+        +create_task(name,description,constraints) Task
+    }
+
+    class Owner {
+        -str name
+        -int work_starttime_hr
+        -int work_endtime_hr
+        -Dict~str, Pet~ pets
+        +create_plan() Scheduler
+        +get_all_tasks() Dict
+        +can_create_pet(pet_name, species, color, year, month, day, height, weight) bool
+        +create_pet(pet_name, species, color, year, month, day, height, weight) Pet
+        +add_pet(pet) None
+    }
+
+    class Task {
+        -str name
+        -str description
+        -Constraints constraints
+        -str status
+        -datetime due_date
+        -str recurrence
+        +mark_complete() None
+        +mark_in_progress() None
+        +mark_incomplete() None
+    }
+
+    class Constraints {
+        -int frequency
+        -int cooldown
+        -int duration
+        -List~str~ prerequisites
+        -time start_time
+        -int priority_level
+        +get_max_frequency() int
+        +frequency_is_allowed(new_freq) bool
+    }
+
+
+    class Scheduler {
+        -Owner owner
+        +sort_tasks_by_time(task_list) List
+        +is_task_in_work_hours(task) bool
+        +filter_tasks(status) List[Task]
+        +get_tasks_by_pet_name(pet_name) List[Task]
+        -_group_scheduled_tasks(include_completed) Dict
+        +find_scheduling_conflicts(include_completed) List[List[Task]]
+        +has_scheduling_conflicts(include_completed) bool
+        +check_task_for_conflicts(task, include_completed) str
+        +get_plan_str() str
+    }
+
+    Owner "1" --> "*" Pet : has
+    Pet "1" --> "*" Task : has
+    Task "1" --> "1" Constraints : has
+    Scheduler "1" --> "1" Owner : has
+    Scheduler ..> Task : uses
+    Owner ..> Scheduler : creates

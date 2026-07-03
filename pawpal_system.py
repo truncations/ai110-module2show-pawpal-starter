@@ -74,7 +74,6 @@ class Pet:
     height: float
     weight: float
     tasks: list[Task] = field(default_factory=list)
-    allergies: list[str] = field(default_factory=list)
 
     def get_age(self) -> int:
         """Calculates the pet's age in years from its birthdate."""
@@ -223,9 +222,9 @@ class Scheduler:
 
             time_str = task.constraints.start_time.strftime("%I:%M %p")
             names = ", ".join(existing.name for existing in conflicting)
-            return f"Warning: '{task.name}' at {time_str} conflicts with existing task(s): {names}"
+            return f"Invalid: '{task.name}' at {time_str} conflicts with existing task(s): {names}"
         except Exception:
-            return f"Warning: could not verify scheduling conflicts for '{getattr(task, 'name', 'this task')}'."
+            return f"Error: could not verify scheduling conflicts for '{getattr(task, 'name', 'this task')}'."
 
     def get_plan_str(self) -> str:
         """Builds a formatted string of the owner's full schedule across all pets."""
@@ -235,7 +234,7 @@ class Scheduler:
         if len(tasks) <= 0:
             return str_to_return
 
-        str_to_return = "\nToday's Schedule for following Pets:\nNOTE: [&] notation means the task scheduled is during your work hours.\n===============\n"
+        str_to_return = "\nSchedule for following Pets:\nNOTE: [&] notation means the task scheduled is during your work hours.\n===============\n"
         for pet_name in tasks.keys():
             str_to_return += f"{pet_name}\n"
             organized_task_list_for_pet = self.sort_tasks_by_time(tasks[pet_name])

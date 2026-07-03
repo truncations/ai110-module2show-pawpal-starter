@@ -115,12 +115,36 @@ Based on these tests, I feel that my confidence level is at a 4 star for this sy
 
 ## 📸 Demo Walkthrough
 
+Main UI Features:
+1. Sidebar for inputting Owner Information
+2. Multiple pages, one for inputting your pets, one for inputting tasks for each pet, and one to build a schedule.
+3. Pet Information page allows you to input information about a pet to then be added to the database.
+4. Tasks page allows you to add tasks to a specific pet, and you can provide requirements for the task.
+5. You can build a CLI-readable schedule that should be friendly to read for the user.
+
 Describe your app in numbered steps so a reader can follow along without watching a video:
 
-1. <!-- Describe this step -->
-2. <!-- Describe this step -->
-3. <!-- Describe this step -->
-4. <!-- Describe this step -->
-5. <!-- Add more steps as needed -->
+1. User enters owner information on side bar; name, work start time, and work end time.
+2. User scrolls down to Pet Information Section
+3. User inputs pet information. For example, a pet named "Dakota", a black dog species, with it being born on March 19th, 2018. It's height is 3.5 feet, and it's 99.3 pounds.
+4. User presses Add Pet to add the pet.
+5. User navigates to Tasks page by the Tasks tab.
+6. User selects the "Dakota" pet to schedule tasks for the pet. No task can have the same start time.
+7. User creates a select number of tasks for the "Dakota" Pet.
+8. User presses Add task for each task.
+9. User can read the list of tasks created for the "Dakota" pet.
+10. User can choose to filter the tasks by "All", "Complete', or "Incomplete" status. This shows tasks within the given filters.
+11. User can also then choose to sort the tasks for a particular pet by a start time to have a schedule for a pet.
+12. User navigates to the Build Schedule tab.
+13. User presses Generate Schedule to create a daily schedule for all tasks for each pet.
+
+
+A fenced code block of sample CLI output from running main.py:
+```python
+[Task(name='Walk', description='Morning walk around the block', constraints=Constraints(frequency=1, cooldown=0, duration=0.5, prerequisites=[], start_time=datetime.time(7, 0), priority_level=0), status='Complete', due_date=None, recurrence=None), Task(name='Grooming', description='Brush coat and check for ticks', constraints=Constraints(frequency=1, cooldown=0, duration=0.5, prerequisites=[], start_time=datetime.time(18, 0), priority_level=0), status='Complete', due_date=None, recurrence=None), Task(name='Walk', description='Afternoon walk in the park', constraints=Constraints(frequency=1, cooldown=0, duration=0.75, prerequisites=[], start_time=datetime.time(14, 15), priority_level=0), status='Complete', due_date=None, recurrence=None)]
+[Task(name='Feed', description='Midday feeding', constraints=Constraints(frequency=1, cooldown=0, duration=0.25, prerequisites=[], start_time=datetime.time(12, 30), priority_level=0), status='Incomplete', due_date=None, recurrence=None), Task(name='Feed', description='Morning feeding', constraints=Constraints(frequency=1, cooldown=0, duration=0.25, prerequisites=[], start_time=datetime.time(8, 0), priority_level=0), status='Incomplete', due_date=None, recurrence=None), Task(name='Vet Checkup', description='Routine wellness checkup', constraints=Constraints(frequency=1, cooldown=0, duration=1.0, prerequisites=[], start_time=datetime.time(20, 45), priority_level=0), status='Incomplete', due_date=None, recurrence=None)]
+[[Task(name='Feed', description='Midday feeding', constraints=Constraints(frequency=1, cooldown=0, duration=0.25, prerequisites=[], start_time=datetime.time(9, 0), priority_level=0), status='Incomplete', due_date=datetime.datetime(2026, 7, 3, 0, 0), recurrence=None), Task(name='Feed', description='Morning feeding', constraints=Constraints(frequency=1, cooldown=0, duration=0.25, prerequisites=[], start_time=datetime.time(9, 0), priority_level=0), status='Incomplete', due_date=datetime.datetime(2026, 7, 3, 0, 0), recurrence=None)]]
+Invalid: 'Vet Follow-up' at 09:00 AM conflicts with existing task(s): Feed, Feed
+```
 
 **Screenshot or video** *(optional)*: <!-- Insert a screenshot or link to a demo video here -->

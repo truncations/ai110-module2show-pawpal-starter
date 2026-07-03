@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pawpal_system import Constraints, Owner, Pet, Task
+from pawpal_system import Constraints, Owner, Pet, Task, Scheduler
 import streamlit as st
 
 st.set_page_config(page_title="PawPal+", page_icon="🐾", layout="centered")
@@ -40,35 +40,18 @@ st.title("🐾 PawPal+")
 
 st.markdown(
     """
-Welcome to the PawPal+ starter app.
+Welcome to **PawPal+** — a scheduling assistant that helps pet owners plan daily care
+routines (walks, feedings, meds, playtime, and more) around their own work hours.
 
-This file is intentionally thin. It gives you a working Streamlit app so you can start quickly,
-but **it does not implement the project logic**. Your job is to design the system and build it.
-
-Use this app as your interactive demo once your backend classes/functions exist.
+**What you can do here:**
+- 🐶 **Pet Information** — register one or more pets with basic details like species, color, and birthdate.
+- 📝 **Tasks** — create recurring care tasks for each pet, with duration, cooldown time between
+  repeats, frequency per day, priority, start time, and optional prerequisites. Tasks can also be
+  filtered, sorted, and marked complete.
+- 📅 **Build Schedule** — generate a conflict-aware daily schedule across all pets and tasks,
+  respecting the owner's work hours and each task's constraints.
 """
 )
-
-with st.expander("Scenario", expanded=True):
-    st.markdown(
-        """
-**PawPal+** is a pet care planning assistant. It helps a pet owner plan care tasks
-for their pet(s) based on constraints like time, priority, and preferences.
-
-You will design and implement the scheduling logic and connect it to this Streamlit UI.
-"""
-    )
-
-with st.expander("What you need to build", expanded=True):
-    st.markdown(
-        """
-At minimum, your system should:
-- Represent pet care tasks (what needs to happen, how long it takes, priority)
-- Represent the pet and the owner (basic info and preferences)
-- Build a plan/schedule for a day that chooses and orders tasks based on constraints
-- Explain the plan (why each task was chosen and when it happens)
-"""
-    )
 
 st.divider()
 
@@ -191,18 +174,56 @@ with tasks_tab:
                     "reduce the duration/cooldown."
                 )
             else:
-                selected_pet.create_task(task_title, task_description, constraints)
+                scheduler = st.session_state.owner.create_plan()
+                candidate_task = Task(name=task_title, description=task_description, constraints=constraints)
+                conflict_message = scheduler.check_task_for_conflicts(candidate_task)
+
+                if conflict_message:
+                    st.error(conflict_message)
+                else:
+                    selected_pet.create_task(task_title, task_description, constraints)
 
     if selected_pet is not None and selected_pet.tasks:
         st.write(f"Current tasks for {selected_pet.name}:")
+
+        control_col1, control_col2 = st.columns(2)
+        with control_col1:
+            status_filter = st.radio(
+                "Filter by status", ["All", "Complete", "Incomplete"], horizontal=True
+            )
+        with control_col2:
+            sort_by_time = st.toggle("Sort by start time")
+
+        scheduler = st.session_state.owner.create_plan()
+
+        if status_filter == "All":
+            tasks_to_show = selected_pet.tasks
+        else:
+            status_matches = scheduler.filter_tasks(status=status_filter)
+            tasks_to_show = [task for task in selected_pet.tasks if task in status_matches]
+
+        if sort_by_time:
+            tasks_to_show = scheduler.sort_tasks_by_time(tasks_to_show)
+
         priority_labels = {1: "🟢 Low", 2: "🟡 Medium", 3: "🔴 High"}
-        for task in selected_pet.tasks:
+        for task_index, task in enumerate(tasks_to_show):
             with st.container(border=True):
                 title_col, status_col = st.columns([3, 1])
                 with title_col:
                     st.markdown(f"#### {task.name}")
                 with status_col:
-                    st.markdown(f"**Status:** {task.status}")
+                    is_complete = st.checkbox(
+                        f"Complete ({task.status})",
+                        value=task.status == "Complete",
+                        key=f"{selected_pet.name}-{task.name}-{task_index}-complete",
+                    )
+                    if is_complete and task.status != "Complete":
+                        selected_pet.mark_task_complete(task)
+                        st.rerun()
+                    elif not is_complete and task.status == "Complete":
+                        task.mark_incomplete()
+                        st.rerun()
+                    
                 if task.description:
                     st.caption(task.description)
 
@@ -223,18 +244,71 @@ with tasks_tab:
 
 with schedule_tab:
     st.subheader("Build Schedule")
-    st.caption("This button should call your scheduling logic once you implement it.")
+    st.caption("Generates a daily schedule across all pets, grouped by pet and sorted by start time.")
 
     if st.button("Generate schedule"):
-        st.warning(
-            "Not implemented yet. Next step: create your scheduling logic (classes/functions) and call it here."
-        )
-        st.markdown(
-            """
-Suggested approach:
-1. Design your UML (draft).
-2. Create class stubs (no logic).
-3. Implement scheduling behavior.
-4. Connect your scheduler here and display results.
-"""
-        )
+        st.session_state.schedule_built = True
+
+    if not st.session_state.owner.pets:
+        st.warning("Add a pet and some tasks before generating a schedule.")
+    elif not st.session_state.get("schedule_built"):
+        st.info("Click **Generate schedule** to build the daily plan.")
+    else:
+        scheduler = st.session_state.owner.create_plan()
+        all_tasks = st.session_state.owner.get_all_tasks()
+        total_tasks = sum(len(tasks) for tasks in all_tasks.values())
+
+        if total_tasks == 0:
+            st.info("No tasks scheduled yet. Add tasks in the Tasks tab.")
+        else:
+            conflicts = scheduler.find_scheduling_conflicts()
+            completed = len(scheduler.filter_tasks(status="Complete"))
+
+            metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
+            metric_col1.metric("Total tasks", total_tasks)
+            metric_col2.metric("Completed", completed)
+            metric_col3.metric("Pending", total_tasks - completed)
+            metric_col4.metric("Conflicts", len(conflicts))
+
+            if conflicts:
+                for group in conflicts:
+                    time_str = group[0].constraints.start_time.strftime("%I:%M %p")
+                    names = ", ".join(task.name for task in group)
+                    st.error(f"⚠️ Conflict at {time_str}: {names}")
+            else:
+                st.success("No scheduling conflicts. 🎉")
+
+            st.divider()
+
+            status_labels = {
+                "Complete": "✅ Complete",
+                "In Progress": "🔄 In Progress",
+                "Incomplete": "⏳ Incomplete",
+            }
+            priority_labels = {1: "🟢 Low", 2: "🟡 Medium", 3: "🔴 High"}
+
+            for pet_name, tasks in all_tasks.items():
+                if not tasks:
+                    continue
+
+                st.markdown(f"#### 🐾 {pet_name}")
+                sorted_tasks = scheduler.sort_tasks_by_time(tasks)
+
+                rows = [
+                    {
+                        "Time": task.constraints.start_time.strftime("%I:%M %p")
+                        if task.constraints.start_time
+                        else "Unscheduled",
+                        "Task": task.name,
+                        "Status": status_labels.get(task.status, task.status),
+                        "Duration": f"{task.constraints.duration} min",
+                        "Priority": priority_labels.get(task.constraints.priority_level, "—"),
+                        "During work hours": "🏢 Yes" if scheduler.is_task_in_work_hours(task) else "🏠 No",
+                        "Prerequisites": ", ".join(task.constraints.prerequisites)
+                        if task.constraints.prerequisites
+                        else "—",
+                    }
+                    for task in sorted_tasks
+                ]
+
+                st.dataframe(rows, width="stretch", hide_index=True)
