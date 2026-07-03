@@ -78,13 +78,29 @@ pytest
 
 # Run with coverage:
 pytest --cov
+
+# Run with Python in Windows:
+python -m pytest
 ```
+
+These tests cover the core functionality of the pet application system. They ensure that the scheduler itself is mainly functional and that creating tasks doesn't cause any issues. They test for mainly whether the scheduler can detect recurrences, detect conflict in task scheduling, and ensure that sorting and filtering the scheduled items is valid.
 
 Sample test output:
 
 ```
 # Paste your pytest output here
+=============================================================================================== test session starts ===============================================================================================
+platform win32 -- Python 3.13.7, pytest-9.0.3, pluggy-1.6.0
+rootdir: A:\programming\Python\CodePath - AI 110\ai110-module2show-pawpal-starter
+plugins: anyio-4.13.0
+collected 8 items                                                                                                                                                                                                  
+
+tests\test_pawpal.py ........                                                                                                                                                                                [100%]
+
+================================================================================================ 8 passed in 0.04s ================================================================================================
 ```
+
+Based on these tests, I feel that my confidence level is at a 4 star for this system's reliability.
 
 ## 📐 Smarter Scheduling
 
@@ -95,7 +111,7 @@ Sample test output:
 | Task sorting | sort_tasks_by_time() | e.g., by priority, duration |
 | Filtering | filter_tasks(), (Pet objects contain tasks so filtering by pet automatically incorporated) | e.g., skip tasks if time runs out |
 | Conflict handling | check_task_for_conflicts(), has_scheduling_conflicts(), find_scheduling_conflicts() | e.g., overlapping time slots |
-| Recurring tasks | mark_task_complete () | e.g., daily vs. weekly |
+| Recurring tasks | mark_task_complete() | e.g., daily vs. weekly |
 
 ## 📸 Demo Walkthrough
 
