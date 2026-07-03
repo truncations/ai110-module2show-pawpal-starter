@@ -148,3 +148,31 @@ Invalid: 'Vet Follow-up' at 09:00 AM conflicts with existing task(s): Feed, Feed
 ```
 
 **Screenshot or video** *(optional)*: <!-- Insert a screenshot or link to a demo video here -->
+
+### CLI Example of Advanced Priority Scheduling
+
+I can sort the tasks based on priority THEN time. The output below shows a sorted list of tasks based on priority then time. 3 is "high", and 1 is "low".
+See pawpal_system.py file for "sort_tasks_by_priority_and_time()" to see implementation of this feature.
+
+```python
+# Let's assume the following tasks given from main.py.
+pet_one_walk = pet_one.create_task("Walk", "Morning walk around the block", Constraints(frequency=1, cooldown=0, duration=0.5, start_time=time(7, 0), priority_level=3))
+pet_one.create_task("Feed", "Midday feeding", Constraints(frequency=1, cooldown=0, duration=0.25, start_time=time(12, 30)))
+pet_one_grooming = pet_one.create_task("Grooming", "Brush coat and check for ticks", Constraints(frequency=1, cooldown=0, duration=0.5, start_time=time(18, 0)))
+
+pet_two_feed = pet_two.create_task("Feed", "Morning feeding", Constraints(frequency=1, cooldown=0, duration=0.25, start_time=time(8, 0), priority_level=3))
+pet_two_walk = pet_two.create_task("Walk", "Afternoon walk in the park", Constraints(frequency=1, cooldown=0, duration=0.75, start_time=time(14, 15)))
+pet_two.create_task("Vet Checkup", "Routine wellness checkup", Constraints(frequency=1, cooldown=0, duration=1.0, start_time=time(20, 45)))
+
+If I pass in a list of these Tasks, then I can receive an output if I pass in sort_tasks_by_priority_and_time():
+
+# Output of sorted tasks
+[
+    Task(name='Walk', description='Morning walk around the block', constraints=Constraints(frequency=1, cooldown=0, duration=0.5, prerequisites=[], start_time=datetime.time(7, 0), priority_level=3), status='Complete', due_date=None, recurrence=None), 
+    Task(name='Feed', description='Morning feeding', constraints=Constraints(frequency=1, cooldown=0, duration=0.25, prerequisites=[], start_time=datetime.time(9, 0), priority_level=3), status='Incomplete', due_date=datetime.datetime(2026, 7, 3, 0, 0), recurrence=None), 
+    Task(name='Feed', description='Midday feeding', constraints=Constraints(frequency=1, cooldown=0, duration=0.25, prerequisites=[], start_time=datetime.time(9, 0), priority_level=1), status='Incomplete', due_date=datetime.datetime(2026, 7, 3, 0, 0), recurrence=None), 
+    Task(name='Walk', description='Afternoon walk in the park', constraints=Constraints(frequency=1, cooldown=0, duration=0.75, prerequisites=[], start_time=datetime.time(14, 15), priority_level=1), status='Complete', due_date=None, recurrence=None), 
+    Task(name='Grooming', description='Brush coat and check for ticks', constraints=Constraints(frequency=1, cooldown=0, duration=0.5, prerequisites=[], start_time=datetime.time(18, 0), priority_level=1), status='Complete', due_date=None, recurrence=None), 
+    Task(name='Vet Checkup', description='Routine wellness checkup', constraints=Constraints(frequency=1, cooldown=0, duration=1.0, prerequisites=[], start_time=datetime.time(20, 45), priority_level=1), status='Incomplete', due_date=None, recurrence=None)
+]
+```

@@ -16,7 +16,7 @@ class Constraints:
     duration: int
     prerequisites: list[str] = field(default_factory=list)
     start_time: time | None = None
-    priority_level: int = 0
+    priority_level: int = 1
     
     def get_max_frequency(self) -> int:
         """Get the max number of times a person can do the given task based on the cooldown, duration, and start time of task."""
@@ -155,6 +155,16 @@ class Scheduler:
         """Organized by start time."""
         tasks = task_list[:]
         tasks.sort(key=lambda task: (task.constraints.start_time is None, task.constraints.start_time))
+        return tasks
+    
+    def sort_tasks_by_priority_and_time(self, task_list) -> list:
+        # 1: low, 2: medium, 3: high
+        tasks_by_priority = {1: [], 2: [], 3: []}
+        for task in task_list:
+            tasks_by_priority[task.constraints.priority_level].append(task)
+        tasks = self.sort_tasks_by_time(tasks_by_priority[3])
+        tasks.extend(self.sort_tasks_by_time(tasks_by_priority[2]))
+        tasks.extend(self.sort_tasks_by_time(tasks_by_priority[1]))
         return tasks
     
     def is_task_in_work_hours(self, task: Task) -> bool:

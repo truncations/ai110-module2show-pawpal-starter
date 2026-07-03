@@ -1,6 +1,4 @@
-# This file will temporarily exist for the time being as of 6/23/2026 due to being on vacation. 
-## Once vacation is complete, these notes will be stored on my local working PC and will be removed upon the next commit.
-
+# Notes for first phase; planning.
 The three core actions that a user should be able to perform:
 - Create a "pet" categorization that holds all of the tasks FOR the given pet only.
 - Create tasks for specified pet.
